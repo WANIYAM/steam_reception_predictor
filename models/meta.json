@@ -1,0 +1,172 @@
+{
+  "feature_cols": [
+    "price",
+    "price_log",
+    "is_free",
+    "achievements",
+    "achievements_log",
+    "achievements_per_dollar",
+    "required_age",
+    "num_genres",
+    "dev_avg_rating",
+    "dev_game_count",
+    "pub_avg_rating",
+    "pub_game_count",
+    "release_month",
+    "release_year_filled",
+    "name_len",
+    "name_word_count",
+    "platform_windows",
+    "platform_mac",
+    "platform_linux",
+    "num_platforms",
+    "genre_Indie",
+    "genre_Action",
+    "genre_Casual",
+    "genre_Adventure",
+    "genre_Strategy",
+    "genre_Simulation",
+    "genre_RPG",
+    "genre_Early_Access",
+    "genre_Free_to_Play",
+    "genre_Sports",
+    "cat_multiplayer",
+    "cat_singleplayer",
+    "cat_coop",
+    "cat_online_multiplayer",
+    "cat_steam_achievements",
+    "cat_steam_trading_cards",
+    "cat_full_controller_support",
+    "cat_steam_cloud",
+    "tag_Indie",
+    "tag_Action",
+    "tag_Casual",
+    "tag_Adventure",
+    "tag_Strategy",
+    "tag_Simulation",
+    "tag_Early_Access",
+    "tag_RPG",
+    "tag_Free_to_Play",
+    "tag_Puzzle",
+    "tag_VR",
+    "tag_Sports",
+    "tag_Racing",
+    "tag_Platformer",
+    "tag_Nudity"
+  ],
+  "genre_cols": [
+    "genre_Indie",
+    "genre_Action",
+    "genre_Casual",
+    "genre_Adventure",
+    "genre_Strategy",
+    "genre_Simulation",
+    "genre_RPG",
+    "genre_Early_Access",
+    "genre_Free_to_Play",
+    "genre_Sports"
+  ],
+  "cat_cols": [
+    "cat_multiplayer",
+    "cat_singleplayer",
+    "cat_coop",
+    "cat_online_multiplayer",
+    "cat_steam_achievements",
+    "cat_steam_trading_cards",
+    "cat_full_controller_support",
+    "cat_steam_cloud"
+  ],
+  "tag_cols": [
+    "tag_Indie",
+    "tag_Action",
+    "tag_Casual",
+    "tag_Adventure",
+    "tag_Strategy",
+    "tag_Simulation",
+    "tag_Early_Access",
+    "tag_RPG",
+    "tag_Free_to_Play",
+    "tag_Puzzle",
+    "tag_VR",
+    "tag_Sports",
+    "tag_Racing",
+    "tag_Platformer",
+    "tag_Nudity"
+  ],
+  "top_genres": [
+    "Indie",
+    "Action",
+    "Casual",
+    "Adventure",
+    "Strategy",
+    "Simulation",
+    "RPG",
+    "Early Access",
+    "Free to Play",
+    "Sports"
+  ],
+  "top_tags": [
+    "Indie",
+    "Action",
+    "Casual",
+    "Adventure",
+    "Strategy",
+    "Simulation",
+    "Early Access",
+    "RPG",
+    "Free to Play",
+    "Puzzle",
+    "VR",
+    "Sports",
+    "Racing",
+    "Platformer",
+    "Nudity"
+  ],
+  "key_categories": {
+    "cat_multiplayer": "Multi-player",
+    "cat_singleplayer": "Single-player",
+    "cat_coop": "Co-op",
+    "cat_online_multiplayer": "Online Multi-Player",
+    "cat_steam_achievements": "Steam Achievements",
+    "cat_steam_trading_cards": "Steam Trading Cards",
+    "cat_full_controller_support": "Full controller support",
+    "cat_steam_cloud": "Steam Cloud"
+  },
+  "global_mean_ratio": 0.7139077639746677,
+  "tier_classes": [
+    "Average",
+    "Great",
+    "Poor"
+  ],
+  "defaults": {
+    "release_month": 7,
+    "release_year_filled": 2017.0,
+    "name_len": 15.0,
+    "name_word_count": 2.0
+  },
+  "metrics": {
+    "well_received_classifier": {
+      "roc_auc": 0.7867,
+      "accuracy": 0.7246,
+      "f1": 0.7847
+    },
+    "reception_tier_classifier": {
+      "accuracy": 0.6106
+    },
+    "positive_ratio_regressor": {
+      "r2": 0.2709,
+      "rmse": 0.1981
+    },
+    "owners_regressor": {
+      "r2": 0.6496,
+      "rmse": 0.8035
+    }
+  },
+  "dataset_stats": {
+    "n_games": 26564,
+    "date_range": [
+      "1997-06-30",
+      "2019-05-01"
+    ]
+  }
+}
