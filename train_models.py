@@ -20,13 +20,13 @@ Produces (under models/):
 """
 
 import json
+import sys
 from collections import Counter
+from pathlib import Path
 
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.metrics import (
     accuracy_score,
     f1_score,
@@ -41,10 +41,31 @@ from xgboost import XGBClassifier, XGBRegressor
 RANDOM_STATE = 42
 
 # ---------------------------------------------------------------------------
+# Anchor all file paths to the directory that contains this script so the
+# script works correctly regardless of where Python is invoked from.
+# ---------------------------------------------------------------------------
+ROOT   = Path(__file__).resolve().parent   # …/steam_reception_predictor/
+DATA   = ROOT / "data"
+MODELS = ROOT / "models"
+MODELS.mkdir(exist_ok=True)   # create models/ if it was deleted
+
+# ---------------------------------------------------------------------------
 # 1. Load & clean
 # ---------------------------------------------------------------------------
 print("Loading data...")
-df = pd.read_csv("data/steam.csv")
+_csv_path = DATA / "steam.csv"
+if not _csv_path.exists():
+    print(
+        f"ERROR: Raw dataset not found at {_csv_path}\n"
+        "Download steam.csv and place it in the data/ directory, then re-run.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+try:
+    df = pd.read_csv(_csv_path)
+except Exception as exc:
+    print(f"ERROR: Could not read {_csv_path}: {exc}", file=sys.stderr)
+    sys.exit(1)
 
 df = df[(df["positive_ratings"] + df["negative_ratings"]) > 0].copy()
 df = df[df["english"] == 1].copy()
@@ -56,8 +77,20 @@ df["release_year"] = df["release_date"].dt.year
 
 
 def parse_owners(owner_str):
-    low, high = owner_str.split("-")
-    return (int(low) + int(high)) / 2
+    """Convert 'low-high' ownership range string to its midpoint.
+
+    Raises ValueError with a descriptive message if the string is malformed,
+    rather than letting Python produce an unhelpful 'not enough values to
+    unpack' or 'invalid literal for int' traceback deep inside apply().
+    """
+    try:
+        low_s, high_s = str(owner_str).split("-")
+        return (int(low_s.strip()) + int(high_s.strip())) / 2
+    except (ValueError, AttributeError) as exc:
+        raise ValueError(
+            f"Unexpected owners value {owner_str!r}. "
+            f"Expected format 'LOW-HIGH' (e.g. '20000-50000'). Original error: {exc}"
+        ) from exc
 
 
 df["owners_avg"] = df["owners"].apply(parse_owners)
@@ -287,10 +320,10 @@ df["owners_gap_log"] = df["owners_log"] - np.log1p(df["pred_owners"])  # + = mor
 # 5. Save everything
 # ---------------------------------------------------------------------------
 print("\nSaving artifacts...")
-joblib.dump(clf_model, "models/clf_well_received.joblib")
-joblib.dump(tier_model, "models/clf_reception_tier.joblib")
-joblib.dump(ratio_model, "models/reg_positive_ratio.joblib")
-joblib.dump(owners_model, "models/reg_owners.joblib")
+joblib.dump(clf_model,    MODELS / "clf_well_received.joblib")
+joblib.dump(tier_model,   MODELS / "clf_reception_tier.joblib")
+joblib.dump(ratio_model,  MODELS / "reg_positive_ratio.joblib")
+joblib.dump(owners_model, MODELS / "reg_owners.joblib")
 
 meta = {
     "feature_cols": feature_cols,
@@ -319,16 +352,24 @@ meta = {
         "date_range": [str(df["release_date"].min().date()), str(df["release_date"].max().date())],
     },
 }
-json.dump(meta, open("models/meta.json", "w"), indent=2)
+json.dump(meta, open(MODELS / "meta.json", "w"), indent=2)
 
-keep_cols = [
+# Build keep_cols without duplicating any column that is already in feature_cols.
+# The original code appended feature_cols directly, causing columns like
+# "price", "achievements", and "required_age" to appear twice in the CSV.
+# pandas writes both columns; read_csv then returns a DataFrame (not a Series)
+# for those names, breaking every downstream .loc / boolean mask in app.py.
+meta_cols = [
     "appid", "name", "developer", "publisher", "release_date", "release_year",
-    "price", "genres", "categories", "steamspy_tags", "platforms", "achievements",
-    "required_age", "positive_ratings", "negative_ratings", "total_ratings",
+    "genres", "categories", "steamspy_tags", "platforms",
+    "positive_ratings", "negative_ratings", "total_ratings",
     "positive_ratio", "well_received", "reception_tier", "owners", "owners_avg",
     "pred_positive_ratio", "pred_well_received_proba", "pred_owners",
     "pred_reception_tier", "reception_gap", "owners_gap_log",
-] + feature_cols
-df[keep_cols].to_csv("models/steam_clean.csv", index=False)
+]
+# Only add meta_cols that don't already appear in feature_cols (preserves order).
+feature_cols_set = set(feature_cols)
+keep_cols = [c for c in meta_cols if c not in feature_cols_set] + feature_cols
+df[keep_cols].to_csv(MODELS / "steam_clean.csv", index=False)
 
 print("\nDone. All artifacts saved under models/.")

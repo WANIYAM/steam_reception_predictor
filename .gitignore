@@ -1,0 +1,53 @@
+# -------------------------------------------------------------------
+# Steam Reception Predictor — .gitignore
+# -------------------------------------------------------------------
+
+# ── Generated model artefacts ───────────────────────────────────────
+# These files are produced by running `python train_models.py` and are
+# intentionally NOT committed for the following reasons:
+#
+#   1. Size: *.joblib files total ~10 MB; steam_clean.csv is ~13 MB.
+#      Git is a poor store for large binaries — they bloat clone size
+#      permanently even after deletion.
+#
+#   2. Reproducibility: committing binaries makes it easy to forget to
+#      retrain after changing feature engineering. The rule "models/
+#      is always the output of the current code on the current data"
+#      is enforced by keeping it out of version control.
+#
+#   3. Data lineage: steam_clean.csv is a derivative of data/steam.csv.
+#      Committing the derivative without the source is misleading.
+#
+# If you need to share trained models across machines or with a team,
+# use a proper model registry (MLflow, DVC, or a shared S3 bucket)
+# rather than committing them to git.
+# -------------------------------------------------------------------
+models/*.joblib
+models/meta.json
+models/steam_clean.csv
+
+# Raw dataset (large binary, distribute separately)
+data/steam.csv
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Streamlit local cache
+.streamlit/
+
+# IDE / OS
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
+
+# Scratch / diagnostic scripts (not part of the product)
+diagnose.py

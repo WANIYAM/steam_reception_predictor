@@ -14,6 +14,7 @@ Run:
 """
 
 import json
+from pathlib import Path
 
 import joblib
 import numpy as np
@@ -31,6 +32,11 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# Anchor artifact paths to this file's directory so `streamlit run app.py`
+# works correctly regardless of the shell's current working directory.
+ROOT   = Path(__file__).resolve().parent
+MODELS = ROOT / "models"
 
 FUNKY_CSS = """
 <style>
@@ -291,30 +297,83 @@ st.markdown(FUNKY_CSS, unsafe_allow_html=True)
 # ---------------------------------------------------------------------------
 # Load models & data
 # ---------------------------------------------------------------------------
+
+# Pre-flight: verify the models/ directory and required artifacts exist before
+# any widget is rendered, so the user sees one clear error instead of six.
+_REQUIRED_ARTIFACTS = [
+    MODELS / "clf_well_received.joblib",
+    MODELS / "clf_reception_tier.joblib",
+    MODELS / "reg_positive_ratio.joblib",
+    MODELS / "reg_owners.joblib",
+    MODELS / "meta.json",
+    MODELS / "steam_clean.csv",
+]
+_missing = [str(p) for p in _REQUIRED_ARTIFACTS if not p.exists()]
+if _missing:
+    st.error(
+        "**Missing model artifacts — run `python train_models.py` first.**\n\n"
+        + "\n".join(f"- `{p}`" for p in _missing)
+    )
+    st.stop()
+
+
 @st.cache_resource
 def load_models():
-    return {
-        "clf": joblib.load("models/clf_well_received.joblib"),
-        "tier": joblib.load("models/clf_reception_tier.joblib"),
-        "ratio": joblib.load("models/reg_positive_ratio.joblib"),
-        "owners": joblib.load("models/reg_owners.joblib"),
-    }
+    try:
+        return {
+            "clf":    joblib.load(MODELS / "clf_well_received.joblib"),
+            "tier":   joblib.load(MODELS / "clf_reception_tier.joblib"),
+            "ratio":  joblib.load(MODELS / "reg_positive_ratio.joblib"),
+            "owners": joblib.load(MODELS / "reg_owners.joblib"),
+        }
+    except Exception as exc:
+        st.error(
+            f"**Failed to load model files from `{MODELS}`.**\n\n"
+            f"Error: `{exc}`\n\n"
+            "Re-run `python train_models.py` to regenerate them."
+        )
+        st.stop()
 
 
 @st.cache_resource
 def load_meta():
-    return json.load(open("models/meta.json"))
+    try:
+        return json.load(open(MODELS / "meta.json", encoding="utf-8"))
+    except Exception as exc:
+        st.error(
+            f"**Failed to parse `meta.json`.**\n\n"
+            f"Error: `{exc}`\n\n"
+            "Re-run `python train_models.py` to regenerate it."
+        )
+        st.stop()
 
 
 @st.cache_data
 def load_catalog():
-    return pd.read_csv("models/steam_clean.csv")
+    try:
+        return pd.read_csv(MODELS / "steam_clean.csv")
+    except Exception as exc:
+        st.error(
+            f"**Failed to load `steam_clean.csv`.**\n\n"
+            f"Error: `{exc}`\n\n"
+            "Re-run `python train_models.py` to regenerate it."
+        )
+        st.stop()
 
 
-models = load_models()
-meta = load_meta()
+models  = load_models()
+meta    = load_meta()
 catalog = load_catalog()
-FEATURE_COLS = meta["feature_cols"]
+
+try:
+    FEATURE_COLS = meta["feature_cols"]
+except KeyError:
+    st.error(
+        "**`meta.json` is missing the `feature_cols` key.**\n\n"
+        "This usually means an older version of `train_models.py` was run. "
+        "Re-run `python train_models.py` to regenerate `meta.json`."
+    )
+    st.stop()
 
 
 # ---------------------------------------------------------------------------
@@ -368,12 +427,14 @@ def build_feature_row(price, achievements, platforms, genres, categories, tags, 
 
 
 def predict_all(row):
-    tier_idx = models["tier"].predict(row)[0]
-    tier = meta["tier_classes"][tier_idx]
+    tier_idx   = models["tier"].predict(row)[0]
+    tier       = meta["tier_classes"][tier_idx]
     tier_proba = models["tier"].predict_proba(row)[0]
     well_proba = float(models["clf"].predict_proba(row)[0][1])
-    ratio = float(np.clip(models["ratio"].predict(row)[0], 0, 1))
-    owners = float(np.expm1(models["owners"].predict(row)[0]))
+    ratio      = float(np.clip(models["ratio"].predict(row)[0], 0, 1))
+    # expm1 of a large negative log-space value can return a small negative
+    # number; clamp to 0 so format_owners() never sees a negative count.
+    owners     = max(0.0, float(np.expm1(models["owners"].predict(row)[0])))
     return {
         "tier": tier,
         "tier_confidence": float(tier_proba.max()),
@@ -384,7 +445,9 @@ def predict_all(row):
 
 
 def tier_badge_html(tier):
-    cls = {"Great": "tier-great", "Average": "tier-average", "Poor": "tier-poor"}[tier]
+    # Fall back gracefully if the model ever returns an unexpected tier label.
+    _tier_classes = {"Great": "tier-great", "Average": "tier-average", "Poor": "tier-poor"}
+    cls = _tier_classes.get(tier, "tier-average")
     return f'<span class="tier-badge {cls}">{tier}</span>'
 
 

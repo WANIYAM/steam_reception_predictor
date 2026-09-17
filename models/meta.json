@@ -146,20 +146,20 @@
   },
   "metrics": {
     "well_received_classifier": {
-      "roc_auc": 0.7867,
-      "accuracy": 0.7246,
-      "f1": 0.7847
+      "roc_auc": 0.7879,
+      "accuracy": 0.7271,
+      "f1": 0.7856
     },
     "reception_tier_classifier": {
-      "accuracy": 0.6106
+      "accuracy": 0.6158
     },
     "positive_ratio_regressor": {
-      "r2": 0.2709,
-      "rmse": 0.1981
+      "r2": 0.2694,
+      "rmse": 0.1983
     },
     "owners_regressor": {
-      "r2": 0.6496,
-      "rmse": 0.8035
+      "r2": 0.6517,
+      "rmse": 0.8011
     }
   },
   "dataset_stats": {

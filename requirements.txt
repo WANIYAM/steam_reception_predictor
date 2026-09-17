@@ -1,7 +1,24 @@
+# -------------------------------------------------------------------
+# Steam Reception Predictor — Python dependencies
+# -------------------------------------------------------------------
+# Model-critical packages are pinned with == to guarantee that joblib
+# files serialised by train_models.py can be deserialised by app.py
+# without XGBoost/sklearn API drift breaking predict() or predict_proba().
+# UI-only packages (streamlit, plotly) use >= because their API surface
+# used here is stable across minor versions.
+#
+# To recreate the exact environment:
+#   pip install -r requirements.txt
+# -------------------------------------------------------------------
+
+# Core data / ML  ─ pinned: joblib format and XGBoost model binary
+# are not guaranteed forward-compatible across major versions.
+pandas==2.2.3
+numpy==1.26.4
+scikit-learn==1.5.2
+xgboost==2.1.1
+joblib==1.4.2
+
+# UI / visualisation ─ >= is safe; no serialised artefacts depend on these.
 streamlit>=1.35
-pandas>=2.0
-numpy>=1.24
-scikit-learn>=1.3
-xgboost>=2.0
-joblib>=1.3
 plotly>=5.20
